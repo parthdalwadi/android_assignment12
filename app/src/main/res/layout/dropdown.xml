@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Place Name:"
+        android:id="@+id/place_name"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distance:"
+        android:id="@+id/distance"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Duration:"
+        android:id="@+id/duration"
+        />
+
+
+    <Spinner
+        android:layout_marginTop="10dp"
+        android:id="@+id/selectAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:entries="@array/markerActions" />
+
+
+
+</LinearLayout>

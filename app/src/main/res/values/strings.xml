@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Parth_c0766346_LA12</string>
+    <string name="title_activity_map_actvt">Map</string>
+    <string-array name="map_types">
+        <item>NONE</item>
+        <item>NORMAL</item>
+        <item>SATALITE</item>
+        <item>TERRIAN</item>
+        <item>HYBRID</item>
+    </string-array>
+    <string-array name="nearByPlaces">
+        <item>Look for nearby places</item>
+        <item>library</item>
+        <item>restaurant</item>
+        <item>bank</item>
+    </string-array>
+    <string-array name="markerActions">
+        <item>Select Action</item>
+        <item>Add to Favourite</item>
+        <item>Get Directions</item>
+        <item>Mark Starting Point</item>
+
+    </string-array>
+</resources>
