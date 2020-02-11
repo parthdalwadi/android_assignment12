@@ -9,15 +9,25 @@ import java.util.List;
 public class Place implements Serializable {
 
 
+    private int id;
     private String name;
     private Boolean isVisited;
     private Double lat, lng;
 
-    public Place(String name, Boolean isVisited, Double lat, Double lng) {
+    public Place(int id, String name, Boolean isVisited, Double lat, Double lng) {
         this.name = name;
         this.isVisited = isVisited;
         this.lat = lat;
         this.lng = lng;
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -52,5 +62,5 @@ public class Place implements Serializable {
         this.lng = lng;
     }
 
-    public static List<Place> MySavedPlaces = new ArrayList<>();
+    //public static List<Place> MySavedPlaces = new ArrayList<>();
 }

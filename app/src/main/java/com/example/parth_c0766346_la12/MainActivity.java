@@ -3,6 +3,7 @@ package com.example.parth_c0766346_la12;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,6 +18,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     ListView LV_places;
+    List<Place> placeList;
+    DatabaseHelper mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+        mDatabase = new DatabaseHelper(this);
         LV_places = findViewById(R.id.locationList);
         LV_places.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -36,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent mapI = new Intent(MainActivity.this, mapActvt.class);
 
 
-                mapI.putExtra("selectedPlace", Place.MySavedPlaces.get(position));
+                //mapI.putExtra("selectedPlace", Place.MySavedPlaces.get(position));
                 startActivity(mapI);
 
 
@@ -52,21 +56,10 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
 
-        String[] tempList = new String[Place.MySavedPlaces.size()];
-        int i = 0;
-        for (Place p:
-             Place.MySavedPlaces) {
-
-            tempList[i] = p.getName();
-
-            i++;
-        }
+        loadPlaces();
 
 
-        final ArrayAdapter<String> placeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, tempList);
-        LV_places.setAdapter(placeAdapter);
 
-        placeAdapter.notifyDataSetChanged();
 
     }
 
@@ -80,5 +73,37 @@ public class MainActivity extends AppCompatActivity {
 
         startActivity(mapI);
 
+    }
+
+
+    private void loadPlaces() {
+//        String sql = "SELECT * FROM employees";
+//        Cursor cursor = mDatabase.rawQuery(sql, null);
+
+        placeList = new ArrayList<>();
+
+        Cursor cursor = mDatabase.getAllPlaces();
+
+        if (cursor.moveToFirst()) {
+            do {
+                placeList.add(new Place(
+                        cursor.getInt(0),
+                        cursor.getString(1),
+                        cursor.getString(2).equals("true"),
+                        cursor.getDouble(3),
+                        cursor.getDouble(4)
+                ));
+            } while (cursor.moveToNext());
+            cursor.close();
+
+            // show items in a listView
+            // we use a custom adapter to show employees
+
+
+            PlaceAdaptor adaptor = new PlaceAdaptor(this, R.layout.place_cell, placeList, mDatabase);
+
+            LV_places.setAdapter(adaptor);
+
+        }
     }
 }

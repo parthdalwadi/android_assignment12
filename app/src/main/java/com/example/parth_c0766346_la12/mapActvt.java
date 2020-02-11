@@ -65,6 +65,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     String s = null;
 
+    DatabaseHelper mDatabase;
 
     // location manager and listener
     LocationManager locationManager;
@@ -90,6 +91,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         mapFragment.getMapAsync(this);
 
 
+        mDatabase = new DatabaseHelper(this);
 
 
         typeMap = findViewById(R.id.mapType);
@@ -273,12 +275,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
                 showMarkerClickedAlert(distanceHashMap.get("distance"),distanceHashMap.get("duration") );
 
-
-
-
-
-
-
                 return true;
 
         }});
@@ -304,7 +300,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                 }
 
                 fvt_dest = mMap.addMarker(options);
-                fvt_dest = fvt_dest;
+
 
 
 
@@ -418,13 +414,16 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     public void addToFvt() {
 
+
             place_name = fetchAddressLine(fvt_dest);
-            placeToAdd = new Place(place_name, false, fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude);
 
+        if (mDatabase.addPlace(place_name, false,fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude)){
 
-            Place.MySavedPlaces.add(placeToAdd);
+            Toast.makeText(this, "Place added", Toast.LENGTH_SHORT).show();
 
-            Toast.makeText(this, "Place added to favourites", Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(this, "Place NOT added", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
