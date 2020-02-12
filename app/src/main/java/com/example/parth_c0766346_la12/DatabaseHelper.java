@@ -78,7 +78,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LAT, lat);
         cv.put(COLUMN_LNG, lng);
 
+
         return sqLiteDatabase.update(TABLE_NAME, cv, COLUMN_ID + "=?", new String[]{String.valueOf(id)}) > 0 ;
+
 
     }
 

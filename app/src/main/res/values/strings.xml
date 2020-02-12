@@ -15,7 +15,6 @@
         <item>bank</item>
     </string-array>
     <string-array name="markerActions">
-        <item>Select Action</item>
         <item>Add to Favourite</item>
         <item>Get Directions</item>
         <item>Mark Starting Point</item>

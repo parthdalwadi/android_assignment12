@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -49,15 +50,21 @@ public class PlaceAdaptor extends ArrayAdapter {
         TextView tvLng = v.findViewById(R.id.lng_ID);
         TextView tvVisited = v.findViewById(R.id.isVisited_ID);
 
+
+
         final Place p = places.get(position);
         tvName.setText(p.getName());
         tvLat.setText(String.valueOf(p.getLat()));
         tvLng.setText(String.valueOf(p.getLng()));
         tvVisited.setText(String.valueOf(p.getVisited()));
 
+        if (p.getVisited())
+            v.setBackgroundColor(0xFF03fc39);
 
         return v;
     }
+
+
 
 
 }

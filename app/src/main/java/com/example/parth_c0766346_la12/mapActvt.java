@@ -27,6 +27,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -62,6 +64,9 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     private GoogleMap mMap;
     Location currLocation;
     Marker fvt_dest, startL;
+
+    Boolean isEditing = false;
+
 
     String s = null;
 
@@ -220,97 +225,136 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
 
         Intent i = getIntent();
+        isEditing = i.getBooleanExtra("EDIT", false);
+        Log.i(TAG, "isEditing: " + isEditing);
+        final Place p = (Place) i.getSerializableExtra("selectedPlace");
 
-        Place p = (Place) i.getSerializableExtra("selectedPlace");
+
 
         if (p != null){
 
             fvt_dest = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(p.getLat(),p.getLng()))
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                    .title(p.getName())
-            );
-            fvt_dest.showInfoWindow();
-
-
+                    .title(isEditing ? "Drag to change location" : p.getName()).draggable(isEditing));
         }
 
+        if(!isEditing) {
+            if (fvt_dest != null){
+            fvt_dest.showInfoWindow();}
+
+            mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                @Override
+                public boolean onMarkerClick(Marker marker) {
 
 
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
+                    System.out.println("you just clicked on the marker");
+                    fvt_dest = marker;
 
 
-                System.out.println("you just clicked on the marker");
-                fvt_dest = marker;
+                    dataTransfer = new Object[3];
+                    dataTransfer[0] = mMap;
+                    dataTransfer[1] = getDirectionUrl();
+                    Log.i(TAG, "directionURL: " + getDirectionUrl());
+                    dataTransfer[2] = fvt_dest.getPosition();
+
+                    GetDirectionData getDirectionData = new GetDirectionData();
+                    // execute asynchronously
+                    getDirectionData.execute(dataTransfer);
 
 
-                dataTransfer = new Object[3];
-                dataTransfer[0] = mMap;
-                dataTransfer[1] = getDirectionUrl();
-                Log.i(TAG, "directionURL: "+getDirectionUrl());
-                dataTransfer[2] = fvt_dest.getPosition();
+                    try {
+                        s = getDirectionData.get(5L, TimeUnit.SECONDS);
 
-                GetDirectionData getDirectionData = new GetDirectionData();
-                // execute asynchronously
-                getDirectionData.execute(dataTransfer);
-
-
-                try {
-                    s = getDirectionData.get(5L, TimeUnit.SECONDS);
-
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (TimeoutException e) {
-                    e.printStackTrace();
-                }
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (TimeoutException e) {
+                        e.printStackTrace();
+                    }
 
 
-                HashMap<String, String> distanceHashMap = null;
-                DataParser distanceParser = new DataParser();
-                distanceHashMap = distanceParser.parseDistance(s);
+                    HashMap<String, String> distanceHashMap = null;
+                    DataParser distanceParser = new DataParser();
+                    distanceHashMap = distanceParser.parseDistance(s);
 
-                showMarkerClickedAlert(distanceHashMap.get("distance"),distanceHashMap.get("duration") );
+                    showMarkerClickedAlert(distanceHashMap.get("distance"), distanceHashMap.get("duration"));
 
-                return true;
-
-        }});
-
-
-        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
-            @Override
-            public void onMapLongClick(LatLng latLng) {
-
-
-
-                Location place = new Location("your destination");
-                place.setLongitude(latLng.latitude);
-                place.setLongitude(latLng.longitude);
-                MarkerOptions options = new MarkerOptions().position(latLng).title("your place ")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
-
-                if (fvt_dest != null){
-
-                    fvt_dest.remove();
-
+                    return true;
 
                 }
-
-                fvt_dest = mMap.addMarker(options);
-
+            });
 
 
+            mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                @Override
+                public void onMapLongClick(LatLng latLng) {
 
 
+                    Location place = new Location("your destination");
+                    place.setLongitude(latLng.latitude);
+                    place.setLongitude(latLng.longitude);
+                    MarkerOptions options = new MarkerOptions().position(latLng).title("your place ")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
 
 
-            }
-        });
+                    fvt_dest = mMap.addMarker(options);
+                }
+            });
 
-    }//eof
+
+        } // this part will only execute if editing mode is off
+        else{
+            // when editing mode is ON
+            Log.i(TAG, "old data: " + fvt_dest.getPosition());
+            mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+                @Override
+                public void onMarkerDragStart(Marker marker) {
+
+                }
+
+                @Override
+                public void onMarkerDrag(Marker marker) {
+
+                }
+
+                @Override
+                public void onMarkerDragEnd(Marker marker) {
+
+                    fvt_dest = marker;
+                    Log.i(TAG, "new data: " + fvt_dest.getPosition());
+
+                }
+            });
+
+
+            findViewById(R.id.editModeLayout).setVisibility(View.VISIBLE);
+
+            final CheckBox visited = findViewById(R.id.visitedCheckBox);
+            Log.i(TAG, "onMapReady: " + p.getVisited());
+            visited.setChecked(p.getVisited());
+            // update button
+            findViewById(R.id.updateBTN).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    String newPlaceName = fetchAddressLine(fvt_dest);
+                    Boolean success = mDatabase.updatePlace(p.getId(),newPlaceName,visited.isChecked(),
+                            fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude);
+                    fvt_dest.setTitle(newPlaceName);
+                    fvt_dest.showInfoWindow();
+                    Log.i(TAG, "new data: " + fvt_dest.getPosition());
+
+
+                    Toast.makeText(mapActvt.this, success ? "updated successfully" :"update failed", Toast.LENGTH_SHORT).show();
+
+
+                }
+            });
+
+        }
+    }
 
 
     private void showMarkerClickedAlert(String distance, String duration) {
@@ -501,5 +545,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
             }
         }
     }
-    
+
+
 }
