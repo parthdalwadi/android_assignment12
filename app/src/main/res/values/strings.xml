@@ -13,11 +13,6 @@
         <item>library</item>
         <item>restaurant</item>
         <item>bank</item>
-    </string-array>
-    <string-array name="markerActions">
-        <item>Add to Favourite</item>
-        <item>Get Directions</item>
-        <item>Mark Starting Point</item>
-
+        <item>pharmacy</item>
     </string-array>
 </resources>

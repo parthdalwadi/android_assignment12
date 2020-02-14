@@ -46,6 +46,9 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -100,6 +103,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         findViewById(R.id.userLocationBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 FocusHomeMarker(currUserLocation);
             }
         });
@@ -133,14 +137,20 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
                     Boolean isFvt = (p != null);
 
-
-
                     mMap.clear();
-
+                     if(User != null){
+                        User.remove();
+                    }
                     User = null;
+
                     if (isFvt){
 
                         FocusLocation(new LatLng(p.getLat(), p.getLng()));
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(p.getLat(), p.getLng()))
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                                .title(p.getName())).showInfoWindow();
+
+                        addUSerMarker(currUserLocation);
 
 
                     }else{
@@ -182,7 +192,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                 if (location != null) {
                     currUserLocation = location;
                     addUSerMarker(currUserLocation);
-
                 }
                 
 
@@ -215,10 +224,16 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         super.onStart();
 
 
-        if (!checkPermission())
-            requestPermission();
-        else
-            reqLocationUpdate();
+//        if (!checkPermission())
+//            requestPermission();
+//        else
+//
+//            reqLocationUpdate();
+//            currUserLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            addUSerMarker(currUserLocation);
+
+
+
 
 
     }
@@ -250,24 +265,13 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @SuppressLint("MissingPermission")
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
 
+    @SuppressLint("MissingPermission")
+    public void startupACtivity(){
+
+        reqLocationUpdate();
         currUserLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         addUSerMarker(currUserLocation);
-
-
 
 
         Intent i = getIntent();
@@ -276,8 +280,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         p = (Place) i.getSerializableExtra("selectedPlace");
 
 
-
-        if (p != null){
+        if (p != null) {
 
             Log.i(TAG, "onMapReady: Place is not null good job");
 
@@ -291,20 +294,21 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
             Log.i(TAG, "onMapReady: marker added successfully");
 
             CameraPosition cameraPosition = CameraPosition.builder()
-                .target(pos)
-                .zoom(15)
-                .bearing(0)
-                .tilt(45)
-                .build();
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        }else{
+                    .target(pos)
+                    .zoom(15)
+                    .bearing(0)
+                    .tilt(45)
+                    .build();
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        } else {
 
             FocusHomeMarker(currUserLocation);
         }
 
-        if(!isEditing) {
-            if (fvt_dest != null){
-            fvt_dest.showInfoWindow();}
+        if (!isEditing) {
+            if (fvt_dest != null) {
+                fvt_dest.showInfoWindow();
+            }
 
             mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                 @Override
@@ -313,8 +317,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
                     System.out.println("you just clicked on the marker");
                     fvt_dest = marker;
-
-
 
 
                     dataTransfer = new Object[3];
@@ -344,7 +346,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                     DataParser distanceParser = new DataParser();
                     distanceHashMap = distanceParser.parseDistance(s);
 
-                    showMarkerClickedAlert(marker.getTitle(),distanceHashMap.get("distance"), distanceHashMap.get("duration"));
+                    showMarkerClickedAlert(marker.getTitle(), distanceHashMap.get("distance"), distanceHashMap.get("duration"));
 
                     return true;
 
@@ -361,7 +363,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 //                    place.setLongitude(latLng.latitude);
 //                    place.setLongitude(latLng.longitude);
                     MarkerOptions options = new MarkerOptions().position(latLng)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
 
 
                     fvt_dest = mMap.addMarker(options);
@@ -372,7 +374,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
 
         } // this part will only execute if editing mode is off
-        else{
+        else {
             // when editing mode is ON
             Log.i(TAG, "old data: " + fvt_dest.getPosition());
             mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
@@ -407,19 +409,51 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                 public void onClick(View v) {
 
                     String newPlaceName = fetchAddressLine(fvt_dest);
-                    Boolean success = mDatabase.updatePlace(p.getId(),newPlaceName,visited.isChecked(),
+                    Boolean success = mDatabase.updatePlace(p.getId(), newPlaceName, visited.isChecked(),
                             fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude);
                     fvt_dest.setTitle(newPlaceName);
                     fvt_dest.showInfoWindow();
                     Log.i(TAG, "new data: " + fvt_dest.getPosition());
 
 
-                    Toast.makeText(mapActvt.this, success ? "updated successfully" :"update failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mapActvt.this, success ? "updated successfully" : "update failed", Toast.LENGTH_SHORT).show();
 
 
                 }
             });
 
+        }
+
+
+
+    }
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
+
+
+
+        mMap = googleMap;
+
+//        currUserLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        addUSerMarker(currUserLocation);
+
+
+        if (!checkPermission()){
+            requestPermission();}
+        else {
+
+           startupACtivity();
         }
     }
 
@@ -481,7 +515,12 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return "No Address found";
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
+        String format = simpleDateFormat.format(new Date());
+        Log.d("MainActivity", "Current Timestamp: " + format);
+
+        return format;
     }
 
     public void addToFvt() {
@@ -568,7 +607,14 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     private void addUSerMarker(Location l){
 
-        if (User == null){
+
+
+
+            if(User != null){
+                User.remove();
+                User = null;
+            }
+
 
             LatLng home = new LatLng(l.getLatitude(), l.getLongitude());
             Log.i(TAG, "run without error this time: ");
@@ -580,18 +626,20 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
             );
             User = startL;
 
-        }
+
 
 
 
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                reqLocationUpdate();
+
+                startupACtivity();
 
             }else{
 
