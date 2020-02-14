@@ -46,17 +46,20 @@ public class MainActivity extends AppCompatActivity {
                 
                 SwipeMenuItem del_item = new SwipeMenuItem(getApplicationContext());
                 del_item.setWidth(300);
+                del_item.setBackground(new ColorDrawable(Color.RED));
                 del_item.setTitle("DELETE");
                 del_item.setTitleSize(15);
-                del_item.setTitleColor(Color.RED);
+                del_item.setTitleColor(Color.WHITE);
                 menu.addMenuItem(del_item);
 
 
                 SwipeMenuItem update_item = new SwipeMenuItem(getApplicationContext());
                 update_item.setWidth(300);
+                update_item.setBackground(new ColorDrawable(Color.rgb(0x00, 0x00,
+                        0xff)));
                 update_item.setTitle("UPDATE");
                 update_item.setTitleSize(15);
-                update_item.setTitleColor(Color.BLUE);
+                update_item.setTitleColor(Color.WHITE);
                 menu.addMenuItem(update_item);
 
 

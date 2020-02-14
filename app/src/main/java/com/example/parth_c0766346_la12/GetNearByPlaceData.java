@@ -6,6 +6,7 @@ import android.util.Log;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
@@ -68,9 +69,10 @@ public class GetNearByPlaceData extends AsyncTask<Object, String, String> {
             //marker options
             MarkerOptions markerOptions = new MarkerOptions()
                     .position(latLng)
-                    .title(placeName + " : " + vicinity)
+                    .title(placeName + "\n" + vicinity)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET));
             googleMap.addMarker(markerOptions);
+
         }
     }
 }

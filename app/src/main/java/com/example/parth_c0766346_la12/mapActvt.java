@@ -10,7 +10,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -54,21 +53,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static android.content.ContentValues.TAG;
-
 public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     private static final int REQUEST_CODE = 1;
     private static final int RADIUS = 1500;
     private static final String TAG = "MAP";
+    private static final long WAIT_TIME = 5L;
     private GoogleMap mMap;
-    Location currLocation;
-    Marker fvt_dest, startL;
+    Location currUserLocation;
+    Marker fvt_dest, startL, User;
 
     Boolean isEditing = false;
 
+    AlertDialog dropdownMenu;
 
     String s = null;
+    Place p = null;
 
     DatabaseHelper mDatabase;
 
@@ -82,7 +82,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     Spinner typeMap, nearby, markerAction;
 
     private String place_name;
-    Place placeToAdd;
     private Object[] dataTransfer;
 
 
@@ -98,6 +97,12 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
         mDatabase = new DatabaseHelper(this);
 
+        findViewById(R.id.userLocationBtn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FocusHomeMarker(currUserLocation);
+            }
+        });
 
         typeMap = findViewById(R.id.mapType);
         typeMap.setSelection(1);
@@ -120,10 +125,36 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         nearby.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+
+
                 if(position > 0){
+
+
+                    Boolean isFvt = (p != null);
+
+
+
+                    mMap.clear();
+
+                    User = null;
+                    if (isFvt){
+
+                        FocusLocation(new LatLng(p.getLat(), p.getLng()));
+
+
+                    }else{
+
+                        FocusHomeMarker(currUserLocation);
+
+                    }
                     // show nearby places
                     String searchPlace = nearby.getSelectedItem().toString();
-                    String url = getUrl(currLocation.getLatitude(), currLocation.getLongitude(), searchPlace);
+
+                    String url = isFvt ? getUrl(p.getLat(), p.getLng(), searchPlace) :
+                            getUrl(currUserLocation.getLatitude(), currUserLocation.getLongitude(), searchPlace);
+
+
                     Log.i(TAG, "onItemSelected: "+url);
                     dataTransfer = new Object[2];
                     dataTransfer[0] = mMap;
@@ -146,9 +177,15 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
             @Override
             public void onLocationChanged(Location location) {
 
-                currLocation = location;
+                Log.i(TAG, "onLocationChanged: called : " + location);
+
+                if (location != null) {
+                    currUserLocation = location;
+                    addUSerMarker(currUserLocation);
+
+                }
                 
-                setHomeMarker(currLocation);
+
 
             }
 
@@ -200,6 +237,10 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     private String getDirectionUrl(){
 
+        if(startL == null){
+            System.out.println("null value detected");
+        }
+
         Log.i(TAG, "getDirectionUrl: ");
         StringBuilder directionUrl = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
         directionUrl.append("origin=" + startL.getPosition().latitude + "," + startL.getPosition().longitude);
@@ -218,25 +259,47 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
+    @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
+        currUserLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        addUSerMarker(currUserLocation);
+
 
 
 
         Intent i = getIntent();
         isEditing = i.getBooleanExtra("EDIT", false);
         Log.i(TAG, "isEditing: " + isEditing);
-        final Place p = (Place) i.getSerializableExtra("selectedPlace");
+        p = (Place) i.getSerializableExtra("selectedPlace");
 
 
 
         if (p != null){
 
+            Log.i(TAG, "onMapReady: Place is not null good job");
+
+            LatLng pos = new LatLng(p.getLat(), p.getLng());
+
             fvt_dest = mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(p.getLat(),p.getLng()))
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                    .position(pos)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
                     .title(isEditing ? "Drag to change location" : p.getName()).draggable(isEditing));
+
+            Log.i(TAG, "onMapReady: marker added successfully");
+
+            CameraPosition cameraPosition = CameraPosition.builder()
+                .target(pos)
+                .zoom(15)
+                .bearing(0)
+                .tilt(45)
+                .build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }else{
+
+            FocusHomeMarker(currUserLocation);
         }
 
         if(!isEditing) {
@@ -252,6 +315,8 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                     fvt_dest = marker;
 
 
+
+
                     dataTransfer = new Object[3];
                     dataTransfer[0] = mMap;
                     dataTransfer[1] = getDirectionUrl();
@@ -264,7 +329,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
 
                     try {
-                        s = getDirectionData.get(5L, TimeUnit.SECONDS);
+                        s = getDirectionData.get(WAIT_TIME, TimeUnit.SECONDS);
 
                     } catch (ExecutionException e) {
                         e.printStackTrace();
@@ -279,7 +344,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                     DataParser distanceParser = new DataParser();
                     distanceHashMap = distanceParser.parseDistance(s);
 
-                    showMarkerClickedAlert(distanceHashMap.get("distance"), distanceHashMap.get("duration"));
+                    showMarkerClickedAlert(marker.getTitle(),distanceHashMap.get("distance"), distanceHashMap.get("duration"));
 
                     return true;
 
@@ -292,14 +357,16 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                 public void onMapLongClick(LatLng latLng) {
 
 
-                    Location place = new Location("your destination");
-                    place.setLongitude(latLng.latitude);
-                    place.setLongitude(latLng.longitude);
-                    MarkerOptions options = new MarkerOptions().position(latLng).title("your place ")
+//                    Location place = new Location("your destination");
+//                    place.setLongitude(latLng.latitude);
+//                    place.setLongitude(latLng.longitude);
+                    MarkerOptions options = new MarkerOptions().position(latLng)
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
 
 
                     fvt_dest = mMap.addMarker(options);
+                    fvt_dest.setTitle(fetchAddressLine(fvt_dest));
+                    fvt_dest.showInfoWindow();
                 }
             });
 
@@ -357,12 +424,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     }
 
 
-    private void showMarkerClickedAlert(String distance, String duration) {
-
-
-        String place_name = "Place Name";
-
-
+    private void showMarkerClickedAlert(String address, String distance, String duration) {
 
         AlertDialog.Builder alert = new AlertDialog.Builder(mapActvt.this);
         final View v = LayoutInflater.from(mapActvt.this).inflate(R.layout.dropdown, null);
@@ -372,58 +434,24 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         TextView tvDist = v.findViewById(R.id.distance);
         TextView tvDur = v.findViewById(R.id.duration);
 
-        tvPlace.setText(place_name);
+        tvPlace.setText(address);
         tvDist.setText(distance);
         tvDur.setText(duration);
 
+        if (mDatabase.numberOfResults(fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude)>0){
 
+            Button b = v.findViewById(R.id.addToFvtBtn);
+            b.setEnabled(false);
+            b.setText("SAVED");
 
-        alert.setPositiveButton("Okay", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which){
+        }
 
+        dropdownMenu = alert.create();
+        dropdownMenu.show();
 
-                markerAction = v.findViewById(R.id.selectAction);
-
-               switch (markerAction.getSelectedItem().toString()){
-
-                   case "Add to Favourite":
-                       addToFvt();
-                       break;
-                   case "Get Directions":
-
-                       String[] directionsList;
-                       DataParser directionParser = new DataParser();
-                       directionsList = directionParser.parseDirections(s);
-                       displayDirections(directionsList);
-
-                       break;
-                   case "Mark Starting Point":
-                       startL = fvt_dest;
-                       break;
-
-                   default:
-                       break;
-
-               }
-
-
-            }
-
-        });
-
-        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which){
-
-                // Do nothing
-
-            }
-
-        });
-
-        alert.create().show();
     }
+
+
 
     private void displayDirections(String[] directionsList) {
 
@@ -432,7 +460,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
         for(int i=0; i<count; i++){
             PolylineOptions options = new PolylineOptions()
-                    .color(Color.RED)
+                    .color(Color.BLUE)
                     .width(10)
                     .addAll(PolyUtil.decode(directionsList[i]));
             mMap.addPolyline(options);
@@ -459,11 +487,12 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     public void addToFvt() {
 
 
-            place_name = fetchAddressLine(fvt_dest);
+            place_name = fvt_dest.getTitle();
+
 
         if (mDatabase.addPlace(place_name, false,fvt_dest.getPosition().latitude, fvt_dest.getPosition().longitude)){
 
-            Toast.makeText(this, "Place added", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, place_name + " added" , Toast.LENGTH_SHORT).show();
 
         }else{
             Toast.makeText(this, "Place NOT added", Toast.LENGTH_SHORT).show();
@@ -474,8 +503,8 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     private BitmapDescriptor bitmapDescriptorFromVector(Context context, @DrawableRes int vectorDrawableResourceId) {
         Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId);
-        vectorDrawable.setBounds(0, 0, 100, 100);
-        Bitmap bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        vectorDrawable.setBounds(0, 0, 80, 80);
+        Bitmap bitmap = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         vectorDrawable.draw(canvas);
         return BitmapDescriptorFactory.fromBitmap(bitmap);
@@ -509,25 +538,50 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     }
 
 
-    private void setHomeMarker(Location location){
-
-        // Add a marker in Sydney and move the camera
-        LatLng home = new LatLng(location.getLatitude(), location.getLongitude());
-        startL = mMap.addMarker(new MarkerOptions()
-                .position(home)
-                .title("Current User Location")
-                .icon(bitmapDescriptorFromVector(this, R.drawable.blueicon))
-                );
+    private void FocusHomeMarker(Location location){
 
 
+        p = null;
+        addUSerMarker(location);
 
         CameraPosition cameraPosition = CameraPosition.builder()
-                .target(home)
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))
                 .zoom(15)
                 .bearing(0)
                 .tilt(45)
                 .build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+
+    }
+
+    private void FocusLocation(LatLng latLng){
+        CameraPosition cameraPosition = CameraPosition.builder()
+                .target(latLng)
+                .zoom(15)
+                .bearing(0)
+                .tilt(45)
+                .build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+
+    private void addUSerMarker(Location l){
+
+        if (User == null){
+
+            LatLng home = new LatLng(l.getLatitude(), l.getLongitude());
+            Log.i(TAG, "run without error this time: ");
+            startL = mMap.addMarker(new MarkerOptions()
+                    .position(home)
+                    .title("Current User Location")
+                    .icon(bitmapDescriptorFromVector(this, R.drawable.user_current_location))
+
+            );
+            User = startL;
+
+        }
+
 
 
     }
@@ -547,4 +601,44 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
     }
 
 
+    public void markerClickAction(View view) {
+
+        switch (view.getId()) {
+
+            case R.id.addToFvtBtn:
+                addToFvt();
+                break;
+            case R.id.getDirBtn:
+
+                mMap.clear();
+                User = null;
+
+
+                String[] directionsList;
+                DataParser directionParser = new DataParser();
+                directionsList = directionParser.parseDirections(s);
+                displayDirections(directionsList);
+
+                startL = mMap.addMarker(new MarkerOptions().position(startL.getPosition())
+                        .title(startL.getTitle())
+                        .icon(bitmapDescriptorFromVector(this,R.drawable.start2 )));
+
+                fvt_dest = mMap.addMarker(new MarkerOptions().position(fvt_dest.getPosition())
+                        .title(fvt_dest.getTitle())
+                        .icon(bitmapDescriptorFromVector(this,R.drawable.destination )));
+                fvt_dest.showInfoWindow();
+                break;
+            case R.id.setStartBtn:
+                startL = fvt_dest;
+                break;
+
+            default:
+                break;
+
+        }
+
+        dropdownMenu.dismiss();
+
+
+    }
 }

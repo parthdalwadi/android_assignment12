@@ -97,6 +97,7 @@ public class DataParser {
 
         } catch(JSONException e){
             e.printStackTrace();
+            return new HashMap<String, String>();
         }
 
         return getDuration(jsonArray);
@@ -118,6 +119,7 @@ public class DataParser {
             directionMap.put("distance", distance);
         } catch (JSONException e) {
             e.printStackTrace();
+            return new HashMap<String, String>();
         }
 
         return directionMap;
@@ -137,6 +139,7 @@ public class DataParser {
 
         } catch(JSONException e){
             e.printStackTrace();
+            return new String[]{};
         }
 
         return getPaths(jsonArray);
@@ -153,6 +156,7 @@ public class DataParser {
                 polylines[i] = getPath(jsonArray.getJSONObject(i));
             }catch (JSONException e){
                 e.printStackTrace();
+                return new String[]{};
             }
         }
         return polylines;
@@ -165,6 +169,7 @@ public class DataParser {
             polyline = jsonObject.getJSONObject("polyline").getString("points");
         } catch (JSONException e) {
             e.printStackTrace();
+            return "";
         }
         return polyline;
 

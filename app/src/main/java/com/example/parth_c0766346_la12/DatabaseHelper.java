@@ -84,6 +84,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
+    int numberOfResults(double lat, double lng){
+
+        SQLiteDatabase sqLiteDatabase = getWritableDatabase();
+        return sqLiteDatabase.rawQuery("SELECT * from " + TABLE_NAME + " WHERE " +
+                COLUMN_LAT+ " =?" + " AND " + COLUMN_LNG + " =? ", new String[]{String.valueOf(lat),String.valueOf(lng)})
+                .getCount();
+
+
+
+    }
 
     boolean removePlace(int id){
 
