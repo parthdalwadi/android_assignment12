@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
                 update_item.setWidth(150);
                 update_item.setBackground(new ColorDrawable(Color.rgb(0x00, 0x00,
                         0xff)));
-                update_item.setTitle("UPDATE");
+                update_item.setTitle("EDIT");
                 update_item.setTitleSize(15);
                 update_item.setTitleColor(Color.WHITE);
                 menu.addMenuItem(update_item);
