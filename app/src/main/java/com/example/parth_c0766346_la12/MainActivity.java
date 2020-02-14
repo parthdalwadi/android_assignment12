@@ -101,10 +101,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                Toast.makeText(MainActivity.this, position + "--" + id , Toast.LENGTH_SHORT).show();
-
-
-
                 Intent mapI = new Intent(MainActivity.this, mapActvt.class);
                 mapI.putExtra("selectedPlace", placeList.get(position));
                 startActivity(mapI);

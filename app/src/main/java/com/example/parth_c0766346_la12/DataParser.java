@@ -96,6 +96,8 @@ public class DataParser {
             jsonArray = jsonObject.getJSONArray("routes").getJSONObject(0).getJSONArray("legs");
 
         } catch(JSONException e){
+
+
             e.printStackTrace();
             return new HashMap<String, String>();
         }

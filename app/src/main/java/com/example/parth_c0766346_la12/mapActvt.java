@@ -10,6 +10,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -21,6 +22,8 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -96,6 +99,28 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+
+        if (!internetCheck()){
+
+            AlertDialog.Builder connection = new AlertDialog.Builder(mapActvt.this);
+            connection.setTitle("It seems you dont have internet !! Check Connection");
+
+            connection.setPositiveButton("Okay", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    Intent i = new Intent(mapActvt.this, MainActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(i);
+
+                }
+            });
+            connection.create().show();
+
+
+
+        }
 
 
         mDatabase = new DatabaseHelper(this);
@@ -218,6 +243,12 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
 
     } // eof
 
+
+    public boolean internetCheck() {
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        return (networkInfo != null && networkInfo.isConnected());
+    }
 
     @Override
     protected void onStart() {
@@ -347,7 +378,6 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
                     distanceHashMap = distanceParser.parseDistance(s);
 
                     showMarkerClickedAlert(marker.getTitle(), distanceHashMap.get("distance"), distanceHashMap.get("duration"));
-
                     return true;
 
                 }
@@ -357,8 +387,7 @@ public class mapActvt extends FragmentActivity implements OnMapReadyCallback {
             mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
                 @Override
                 public void onMapLongClick(LatLng latLng) {
-
-
+                    
 //                    Location place = new Location("your destination");
 //                    place.setLongitude(latLng.latitude);
 //                    place.setLongitude(latLng.longitude);
